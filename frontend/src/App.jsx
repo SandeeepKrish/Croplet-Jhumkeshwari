@@ -102,7 +102,7 @@ function AppContent() {
   const isAdminPath = location.pathname.startsWith('/admin');
 
   return (
-    <div className={`min-h-screen bg-white font-sans text-gray-900 flex flex-col relative px-4 md:px-8 max-w-[1600px] mx-auto shadow-2xl shadow-gray-200/50`}>
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 flex flex-col relative overflow-x-hidden">
       <Toaster position="top-right" reverseOrder={false} />
 
       {/* Custom Pincode Modal */}
@@ -140,148 +140,151 @@ function AppContent() {
         </div>
       )}
       
-      {!isAdminPath && (
-        <header className="border-b border-gray-200">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <Link to="/">
-                <h1 className="text-2xl font-normal tracking-[0.2em] hover:text-gray-700 cursor-pointer uppercase">JHUMKESHWARI</h1>
-              </Link>
-              <div 
-                onClick={handleUpdatePincode}
-                className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer hover:text-black transition-colors"
-              >
-                <MapPin size={16} className="text-pink-500" />
-                <span>{deliveryPincode ? `Deliver to ${deliveryPincode}` : 'Update Delivery Pincode'}</span>
-                <span className="text-xs">▼</span>
-              </div>
-            </div>
-
-            <div className="flex-1 max-w-xl mx-8 relative" ref={searchRef}>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search for Jhumkas, Combo Sets..."
-                className="w-full bg-[#f5f3ef] rounded-full py-2.5 pl-6 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-[#a87449] transition-all"
-              />
-              <Search className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${isSearching ? 'text-[#a87449] animate-pulse' : 'text-gray-500'}`} size={18} />
-              
-              {/* Search Suggestions Dropdown */}
-              {searchResults.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-md shadow-2xl z-[1000] border border-gray-100 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
-                  <div className="p-2">
-                    {searchResults.map((prod) => (
-                      <div 
-                        key={prod._id}
-                        onClick={() => {
-                          setSelectedProduct(prod);
-                          setSearchResults([]);
-                          setSearchQuery("");
-                        }}
-                        className="flex items-center gap-4 p-3 hover:bg-[#faf9f6] cursor-pointer group transition-colors rounded-xl"
-                      >
-                        <div className="w-12 h-16 bg-gray-50 rounded-lg overflow-hidden flex-shrink-0">
-                          <img src={getImageUrl(prod.image)} alt={prod.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-[11px] font-bold uppercase tracking-widest text-black truncate">{prod.name}</h4>
-                          <p className="text-[10px] text-[#a87449] font-bold mt-1 tracking-tight">₹{prod.price}</p>
-                          {prod.category && <span className="text-[8px] text-gray-400 uppercase tracking-widest">{prod.category}</span>}
-                        </div>
-                        <Zap size={14} className="text-gray-200 group-hover:text-yellow-400 transition-colors" />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="bg-[#faf9f6] p-3 text-center border-t border-gray-50">
-                    <button className="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-400 hover:text-black transition-colors">
-                      View all {searchResults.length} matching items
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-6">
-              {isLoggedIn ? (
-                <div className="flex items-center gap-4">
-                   <Link to="/profile" className="flex items-center gap-2 hover:text-[#a87449] transition-colors group">
-                      <div className="relative">
-                        <User size={24} />
-                        <Zap size={12} className="absolute -top-1 -right-1 text-yellow-500 fill-yellow-500" />
-                      </div>
-                      <span className="text-[10px] font-bold uppercase tracking-widest hidden md:block">Hi, {user.name.split(' ')[0]}</span>
-                   </Link>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => dispatch(toggleAuthModal())}
-                  className="text-[11px] font-bold tracking-[0.2em] uppercase border-b border-black pb-0.5 hover:text-gray-500 transition-colors"
+      {/* Centered Content Wrapper */}
+      <div className={`w-full max-w-[1600px] mx-auto flex-1 flex flex-col bg-white shadow-2xl shadow-gray-200/50 mb-0 px-0`}>
+        {!isAdminPath && (
+          <header className="border-b border-gray-200 w-full px-4 md:px-8">
+            <div className="container mx-auto py-4 flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <Link to="/">
+                  <h1 className="text-2xl font-normal tracking-[0.2em] hover:text-gray-700 cursor-pointer uppercase">JHUMKESHWARI</h1>
+                </Link>
+                <div 
+                  onClick={handleUpdatePincode}
+                  className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer hover:text-black transition-colors"
                 >
-                  LOGIN
-                </button>
-              )}
-
-              <div 
-                className="relative cursor-pointer hover:text-[#a87449] transition-colors"
-                onClick={() => dispatch(toggleWishlist())}
-              >
-                <Heart size={24} />
-                {wishlistCount > 0 && (
-                   <div className="absolute -top-2 -right-2 bg-black text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-                     {wishlistCount}
-                   </div>
-                )}
+                  <MapPin size={16} className="text-pink-500" />
+                  <span>{deliveryPincode ? `Deliver to ${deliveryPincode}` : 'Update Delivery Pincode'}</span>
+                  <span className="text-xs">▼</span>
+                </div>
               </div>
-              <div 
-                className="relative cursor-pointer"
-                onClick={() => dispatch(toggleCart())}
-              >
-                <ShoppingBag size={24} />
-                {cartCount > 0 && (
-                  <div className="absolute -top-2 -right-2 bg-black text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-                    {cartCount}
+
+              <div className="flex-1 max-w-xl mx-8 relative" ref={searchRef}>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search for Jhumkas, Combo Sets..."
+                  className="w-full bg-[#f5f3ef] rounded-full py-2.5 pl-6 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-[#a87449] transition-all"
+                />
+                <Search className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${isSearching ? 'text-[#a87449] animate-pulse' : 'text-gray-500'}`} size={18} />
+                
+                {/* Search Suggestions Dropdown */}
+                {searchResults.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-md shadow-2xl z-[1000] border border-gray-100 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+                    <div className="p-2">
+                      {searchResults.map((prod) => (
+                        <div 
+                          key={prod._id}
+                          onClick={() => {
+                            setSelectedProduct(prod);
+                            setSearchResults([]);
+                            setSearchQuery("");
+                          }}
+                          className="flex items-center gap-4 p-3 hover:bg-[#faf9f6] cursor-pointer group transition-colors rounded-xl"
+                        >
+                          <div className="w-12 h-16 bg-gray-50 rounded-lg overflow-hidden flex-shrink-0">
+                            <img src={getImageUrl(prod.image)} alt={prod.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-[11px] font-bold uppercase tracking-widest text-black truncate">{prod.name}</h4>
+                            <p className="text-[10px] text-[#a87449] font-bold mt-1 tracking-tight">₹{prod.price}</p>
+                            {prod.category && <span className="text-[8px] text-gray-400 uppercase tracking-widest">{prod.category}</span>}
+                          </div>
+                          <Zap size={14} className="text-gray-200 group-hover:text-yellow-400 transition-colors" />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="bg-[#faf9f6] p-3 text-center border-t border-gray-50">
+                      <button className="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-400 hover:text-black transition-colors">
+                        View all {searchResults.length} matching items
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
+
+              <div className="flex items-center gap-6">
+                {isLoggedIn ? (
+                  <div className="flex items-center gap-4">
+                     <Link to="/profile" className="flex items-center gap-2 hover:text-[#a87449] transition-colors group">
+                        <div className="relative">
+                          <User size={24} />
+                          <Zap size={12} className="absolute -top-1 -right-1 text-yellow-500 fill-yellow-500" />
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest hidden md:block">Hi, {user.name.split(' ')[0]}</span>
+                     </Link>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => dispatch(toggleAuthModal())}
+                    className="text-[11px] font-bold tracking-[0.2em] uppercase border-b border-black pb-0.5 hover:text-gray-500 transition-colors"
+                  >
+                    LOGIN
+                  </button>
+                )}
+
+                <div 
+                  className="relative cursor-pointer hover:text-[#a87449] transition-colors"
+                  onClick={() => dispatch(toggleWishlist())}
+                >
+                  <Heart size={24} />
+                  {wishlistCount > 0 && (
+                     <div className="absolute -top-2 -right-2 bg-black text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                       {wishlistCount}
+                     </div>
+                  )}
+                </div>
+                <div 
+                  className="relative cursor-pointer"
+                  onClick={() => dispatch(toggleCart())}
+                >
+                  <ShoppingBag size={24} />
+                  {cartCount > 0 && (
+                    <div className="absolute -top-2 -right-2 bg-black text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                      {cartCount}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
 
-          <nav className="container mx-auto px-4 py-4 pb-5">
-            <ul className="flex items-center justify-center gap-10 text-[16px] font-semibold tracking-wide text-[#2c3e50]">
-              <li>
-                <Link to="/new-arrivals" className="nav-link">New Arrivals</Link>
-              </li>
-              <li>
-                <Link to="/" className="nav-link">Best Seller</Link>
-              </li>
-              <li>
-                 <Link to="/" className="nav-link">Fine Silver</Link>
-              </li>
-              <li>
-                 <Link to="/" className="nav-link">Gifting</Link>
-              </li>
-              <li>
-                 <Link to="/about-us" className="nav-link">About Us</Link>
-              </li>
-              <li>
-                 <Link to="/contact-us" className="nav-link">Contact Us</Link>
-              </li>
-            </ul>
-          </nav>
-        </header>
-      )}
+            <nav className="container mx-auto py-4 pb-5">
+              <ul className="flex items-center justify-center gap-10 text-[16px] font-semibold tracking-wide text-[#2c3e50]">
+                <li>
+                  <Link to="/new-arrivals" className="nav-link">New Arrivals</Link>
+                </li>
+                <li>
+                  <Link to="/" className="nav-link">Best Seller</Link>
+                </li>
+                <li>
+                   <Link to="/" className="nav-link">Fine Silver</Link>
+                </li>
+                <li>
+                   <Link to="/" className="nav-link">Gifting</Link>
+                </li>
+                <li>
+                   <Link to="/about-us" className="nav-link">About Us</Link>
+                </li>
+                <li>
+                   <Link to="/contact-us" className="nav-link">Contact Us</Link>
+                </li>
+              </ul>
+            </nav>
+          </header>
+        )}
 
-      <div className="flex-1">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/new-arrivals" element={<NewArrivals />} />
-          <Route path="/about-us" element={<AboutUs />} />
-          <Route path="/contact-us" element={<ContactUs />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/admin" element={<AdminPanel />} />
-        </Routes>
+        <div className="flex-1 w-full px-4 md:px-8">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/new-arrivals" element={<NewArrivals />} />
+            <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/contact-us" element={<ContactUs />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/admin" element={<AdminPanel />} />
+          </Routes>
+        </div>
       </div>
 
       {!isAdminPath && <Footer />}
