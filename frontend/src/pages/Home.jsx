@@ -131,7 +131,7 @@ export default function Home() {
                     key={index}
                     src={img} 
                     alt={`Slide ${index + 1}`}
-                    className={`absolute inset-0 w-full h-full object-contain transition-all duration-1000 ease-in-out cursor-zoom-in hover:scale-125 ${index === heroIndex ? "opacity-100 scale-100" : "opacity-0"}`}
+                    className={`absolute inset-0 w-full h-full object-cover object-top transition-all duration-1000 ease-in-out hover:scale-110 ${index === heroIndex ? "opacity-100 scale-100" : "opacity-0"}`}
                 />
             ))}
             <div className="absolute inset-0 bg-black/20 mix-blend-multiply"></div>
