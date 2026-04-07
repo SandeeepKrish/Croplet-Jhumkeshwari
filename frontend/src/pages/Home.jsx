@@ -11,6 +11,8 @@ import toast from "react-hot-toast";
 import jhumka1 from "../assets/jhumka1.png";
 import jhumka2 from "../assets/jhumka2.png";
 import jhumka3 from "../assets/jhumka3.png";
+import jhumka4 from "../assets/jhumka4.png";
+import jhumka5 from "../assets/jhumka5.png";
 
 import AboutUs from "./AboutUs";
 import ContactUs from "./ContactUs";
@@ -25,7 +27,7 @@ export default function Home() {
   const [newArrivals, setNewArrivals] = React.useState([]);
 
   // Hero Slider State
-  const heroImages = [jhumka1, jhumka2, jhumka3];
+  const heroImages = [jhumka1, jhumka2, jhumka3, jhumka4, jhumka5];
   const [heroIndex, setHeroIndex] = React.useState(0);
 
   const nextHero = () => {
