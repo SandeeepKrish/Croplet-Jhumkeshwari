@@ -30,13 +30,17 @@ export default function Home() {
         fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
         
         // New Arrivals: Products uploaded within the last 5 days
-        const arrivals = data.filter(p => p.createdAt && new Date(p.createdAt) >= fiveDaysAgo);
+        const arrivals = data.filter(p => {
+          if (!p.createdAt) return false;
+          const createdDate = new Date(p.createdAt);
+          return createdDate >= fiveDaysAgo;
+        });
         
         // Everyday Demifine: Products older than 5 days
         const daily = data.filter(p => !p.createdAt || new Date(p.createdAt) < fiveDaysAgo);
 
         setNewArrivals(arrivals);
-        setDemifine(daily.length > 0 ? daily : data.slice(0, 8)); // Fallback if no old products exist
+        setDemifine(daily.length > 0 ? daily : data.slice(0, 8));
       } catch (err) {
         console.error("Failed to fetch products:", err);
       }
@@ -67,7 +71,7 @@ export default function Home() {
   };
 
   const handleToggleWishlist = async (e, product) => {
-    e.stopPropagation(); // prevent parent click
+    e.stopPropagation();
     if (!isLoggedIn) {
       toast.error("Please login to save this!", {
         style: { borderRadius: '0px', background: '#333', color: '#fff', fontWeight: 'bold' }
@@ -108,47 +112,22 @@ export default function Home() {
           <ChevronRight size={20} />
         </button>
         
-        <div className="absolute right-0 top-0 h-full w-1/2 flex flex-col justify-center items-center text-white">
-          <h2 className="text-6xl font-light tracking-widest mb-16">FLASH <span className="font-semibold">SALE</span></h2>
+        <div className="absolute right-0 top-0 h-full w-full md:w-1/2 flex flex-col justify-center items-center text-white p-6 md:p-12 text-center">
+          <h2 className="text-5xl md:text-7xl font-extralight tracking-[0.3em] mb-6 animate-fade-in-up uppercase">FLASH <span className="font-bold">SALE</span></h2>
+          <div className="w-16 h-0.5 bg-white/60 mb-10"></div>
           
-          <div className="flex gap-16 text-center">
-            <div className="flex flex-col items-center">
-              <span className="text-sm tracking-widest mb-2 font-light">1 ITEM</span>
-              <div className="flex items-start text-7xl font-light mb-4 text-white drop-shadow-lg">
-                30<div className="flex flex-col text-2xl font-normal leading-tight ml-1 mt-2"><span>%</span><span>OFF</span></div>
-              </div>
-              <span className="text-sm tracking-wide font-light">CODE <span className="font-semibold">FLASH30</span></span>
-            </div>
-            
-            <div className="w-px h-32 bg-white/40"></div>
-            
-            <div className="flex flex-col items-center">
-              <span className="text-sm tracking-widest mb-2 font-light">2 ITEM</span>
-              <div className="flex items-start text-7xl font-light mb-4 text-white drop-shadow-lg">
-                45<div className="flex flex-col text-2xl font-normal leading-tight ml-1 mt-2"><span>%</span><span>OFF</span></div>
-              </div>
-              <span className="text-sm tracking-wide font-light">CODE <span className="font-semibold">FLASH45</span></span>
-            </div>
-
-            <div className="w-px h-32 bg-white/40"></div>
-
-            <div className="flex flex-col items-center">
-              <span className="text-sm tracking-widest mb-2 font-light">3 ITEM</span>
-              <div className="flex items-start text-7xl font-light mb-4 text-white drop-shadow-lg">
-                50<div className="flex flex-col text-2xl font-normal leading-tight ml-1 mt-2"><span>%</span><span>OFF</span></div>
-              </div>
-              <span className="text-sm tracking-wide font-light">CODE <span className="font-semibold">FLASH50</span></span>
-            </div>
-          </div>
-
-          <button className="mt-20 border-b border-white pb-1 text-sm tracking-[0.2em] font-light hover:text-gray-200 transition-colors">
+          <button 
+            onClick={() => document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' })}
+            className="px-10 py-4 border border-white text-[10px] tracking-[0.4em] font-bold hover:bg-white hover:text-[#a87449] transition-all duration-300 uppercase group flex items-center gap-3"
+          >
             SHOP NOW
+            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
       </section>
 
       {/* Everyday Demifine Section */}
-      <section className="py-16 bg-[#faf9f6]">
+      <section id="products-section" className="py-16 bg-[#faf9f6]">
         <div className="container mx-auto px-4">
             <h3 className="text-center text-sm font-bold tracking-[0.3em] text-[#a87449] mb-12 uppercase">EVERYDAY DEMIFINE JEWELLERY</h3>
             
@@ -163,7 +142,6 @@ export default function Home() {
                       />
                       <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       
-                      {/* Interaction Overlay */}
                       <div className="absolute top-3 right-3 flex flex-col gap-2 transform translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
                         <button 
                           onClick={(e) => handleToggleWishlist(e, prod)}

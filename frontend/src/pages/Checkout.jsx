@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, MapPin, Truck, ChevronLeft, CheckCircle } from "lucide-react";
+import { CreditCard, MapPin, Truck, ChevronLeft, CheckCircle, Ticket } from "lucide-react";
 import toast from "react-hot-toast";
-import { placeOrder } from "../services/api";
+import { placeOrder, fetchUserOrders } from "../services/api";
 
 export default function Checkout() {
   const { user, isLoggedIn } = useSelector((state) => state.auth);
@@ -22,6 +22,11 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [showQR, setShowQR] = useState(false);
 
+  // Coupon State
+  const [couponInput, setCouponInput] = useState("");
+  const [discount, setDiscount] = useState(0); // Percentage
+  const [isCouponApplied, setIsCouponApplied] = useState(false);
+
   const toastStyle = { borderRadius: '0px', background: '#333', color: '#fff', fontWeight: 'bold' };
 
   useEffect(() => {
@@ -31,12 +36,35 @@ export default function Checkout() {
   }, [isLoggedIn, navigate]);
 
   const calculateTotalNumeric = () => {
-    return items.reduce((total, item) => {
+    const subtotal = items.reduce((total, item) => {
       const numericPrice = typeof item.price === "string"
         ? parseFloat(item.price.replace(/,/g, ""))
         : parseFloat(item.price);
       return total + (isNaN(numericPrice) ? 0 : numericPrice) * item.quantity;
     }, 0);
+    
+    return subtotal - (subtotal * (discount / 100));
+  };
+
+  const handleApplyCoupon = async () => {
+    if (couponInput.toUpperCase() !== "NEWCOMER") {
+      toast.error("Invalid coupon code.", { style: toastStyle });
+      return;
+    }
+
+    try {
+      const orders = await fetchUserOrders(user.id || user._id);
+      if (orders && orders.length > 0) {
+        toast.error("This coupon is only for first-time orders.", { style: toastStyle });
+        return;
+      }
+      
+      setDiscount(10);
+      setIsCouponApplied(true);
+      toast.success("NEWCOMER coupon applied! 10% OFF", { icon: '🎉', style: toastStyle });
+    } catch (error) {
+       toast.error("Failed to verify coupon eligibility.");
+    }
   };
 
   const calculateTotal = () => {
@@ -281,6 +309,41 @@ export default function Checkout() {
         <div className="sticky top-10 border border-gray-200 p-8 space-y-8 bg-gray-50/30">
           <h3 className="text-xl font-bold tracking-widest uppercase border-b pb-4">Order Summary</h3>
           
+          {/* Coupon Input */}
+          {!isCouponApplied ? (
+            <div className="space-y-3 pb-6 border-b">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Apply Coupon</label>
+              <div className="flex gap-2">
+                <input 
+                   placeholder="NEWCOMER" 
+                   value={couponInput}
+                   onChange={(e) => setCouponInput(e.target.value)}
+                   className="flex-1 px-4 py-2 bg-white border border-gray-200 outline-none font-bold text-xs uppercase"
+                />
+                <button 
+                  onClick={handleApplyCoupon}
+                  className="bg-black text-white px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-gray-800 transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+              <p className="text-[9px] text-gray-400 font-medium italic">New users get 10% off with code NEWCOMER</p>
+            </div>
+          ) : (
+            <div className="pb-6 border-b flex justify-between items-center animate-fade-in">
+              <div className="flex items-center gap-2">
+                <Ticket size={16} className="text-pink-500" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-pink-500">NEWCOMER APPLIED</span>
+              </div>
+              <button 
+                onClick={() => { setDiscount(0); setIsCouponApplied(false); setCouponInput(""); }}
+                className="text-[9px] font-bold underline uppercase text-gray-400 hover:text-black"
+              >
+                Remove
+              </button>
+            </div>
+          )}
+          
           <div className="space-y-6 max-h-[300px] overflow-y-auto pr-2">
             {items.map((item) => (
               <div key={item.id} className="flex gap-4 items-center">
@@ -299,8 +362,14 @@ export default function Checkout() {
           <div className="space-y-4 pt-4 border-t">
             <div className="flex justify-between text-sm font-medium">
                <span className="text-gray-500 font-bold tracking-widest uppercase text-xs">Subtotal</span>
-               <span className="font-bold">₹ {calculateTotal()}</span>
+               <span className="font-bold">₹ {(calculateTotalNumeric() / (1 - (discount/100))).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
             </div>
+            {isCouponApplied && (
+               <div className="flex justify-between text-sm font-medium animate-fade-in">
+                 <span className="text-pink-500 font-bold tracking-widest uppercase text-xs">Discount (10%)</span>
+                 <span className="text-pink-500 font-bold">- ₹ {(calculateTotalNumeric() * (discount/100) / (1 - (discount/100))).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+               </div>
+            )}
             <div className="flex justify-between text-sm font-medium border-b pb-4">
                <span className="text-gray-500 font-bold tracking-widest uppercase text-xs">Shipping</span>
                <span className="text-green-600 font-bold text-xs uppercase">Free</span>
