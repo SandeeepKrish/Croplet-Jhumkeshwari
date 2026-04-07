@@ -102,7 +102,7 @@ function AppContent() {
   const isAdminPath = location.pathname.startsWith('/admin');
 
   return (
-    <div className={`min-h-screen bg-white font-sans text-gray-900 flex flex-col relative`}>
+    <div className={`min-h-screen bg-white font-sans text-gray-900 flex flex-col relative px-4 md:px-8 max-w-[1600px] mx-auto shadow-2xl shadow-gray-200/50`}>
       <Toaster position="top-right" reverseOrder={false} />
 
       {/* Custom Pincode Modal */}
