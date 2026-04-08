@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { CreditCard, MapPin, Truck, ChevronLeft, CheckCircle, Ticket } from "lucide-react";
 import toast from "react-hot-toast";
 import { placeOrder, fetchUserOrders } from "../services/api";
+import ScannerImg from "../assets/Scanner.jpeg";
 
 export default function Checkout() {
   const { user, isLoggedIn } = useSelector((state) => state.auth);
@@ -278,7 +279,7 @@ export default function Checkout() {
                 <div className="space-y-6 flex flex-col items-center">
                   <div className="p-4 bg-white shadow-xl border border-gray-200 rounded-sm">
                     <img 
-                      src="/Scanner.jpeg" 
+                      src={ScannerImg} 
                       alt="Payment QR" 
                       className="w-64 h-auto max-w-full"
                     />
