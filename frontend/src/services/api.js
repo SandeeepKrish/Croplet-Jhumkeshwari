@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
-const BACKEND_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://croplet-jhumkeshwari.onrender.com/api';
+const BACKEND_URL = 'https://croplet-jhumkeshwari.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
