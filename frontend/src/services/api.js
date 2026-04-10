@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://croplet-jhumkeshwari.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 const BACKEND_URL = 'https://croplet-jhumkeshwari.onrender.com';
 
 const api = axios.create({
