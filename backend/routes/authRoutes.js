@@ -6,6 +6,58 @@ const router = express.Router();
 // Mock store for OTPs
 const otpStore = {};
 
+const dns = require('dns');
+const util = require('util');
+const lookupAsync = util.promisify(dns.lookup);
+
+let transporterInstance = null;
+let isTransporterVerified = false;
+
+// Singleton function to get or create the Nodemailer transport pool
+async function getTransporter() {
+    if (transporterInstance && isTransporterVerified) return transporterInstance;
+
+    const EMAIL_USER = process.env.EMAIL_USER;
+    const EMAIL_PASS = process.env.EMAIL_PASS;
+
+    if (!EMAIL_USER || !EMAIL_PASS) {
+        throw new Error('Missing EMAIL_USER or EMAIL_PASS in environment variables.');
+    }
+
+    // Force manual IPv4 DNS resolution
+    const { address } = await lookupAsync('smtp.gmail.com', { family: 4 });
+
+    transporterInstance = nodemailer.createTransport({
+        host: address, // use resolved IPv4 address directly
+        port: 465,
+        secure: true,
+        auth: {
+            user: EMAIL_USER,
+            pass: EMAIL_PASS
+        },
+        tls: {
+            rejectUnauthorized: false,
+            servername: 'smtp.gmail.com' // required for TLS to match certificate when using IP
+        },
+        pool: true, // Use a connection pool (crucial for production reliability)
+        maxConnections: 3, // Prevent spamming Gmail with too many simultaneous connections
+        maxMessages: 100 // Reuse connection up to 100 times before recycling
+    });
+
+    try {
+        await transporterInstance.verify();
+        isTransporterVerified = true;
+        console.log('✅ Nodemailer Production Pool Ready (IPv4)');
+    } catch (error) {
+        console.error('❌ Nodemailer Verification Failed:', error.message);
+        // Important: if using Gmail 2FA, ensure EMAIL_PASS is an "App Password" not standard password
+        isTransporterVerified = false; 
+        throw error;
+    }
+
+    return transporterInstance;
+}
+
 // 1. Send OTP Email Route
 router.post('/send-otp', async (req, res) => {
     const { email } = req.body;
@@ -13,37 +65,12 @@ router.post('/send-otp', async (req, res) => {
 
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // WARNING: In-memory otpStore wipes whenever Render restarts. Use Redis/DB for true production later.
     otpStore[email] = { otp, expires: Date.now() + 600000 }; 
 
-    const EMAIL_USER = process.env.EMAIL_USER;
-    const EMAIL_PASS = process.env.EMAIL_PASS;
-
-    if (!EMAIL_USER || !EMAIL_PASS) {
-        console.error('❌ EMAIL ERROR: Missing EMAIL_USER or EMAIL_PASS in environment variables.');
-        return res.status(500).json({ message: 'Email configuration missing in backend.' });
-    }
-
     try {
-        const dns = require('dns');
-        const util = require('util');
-        const lookupAsync = util.promisify(dns.lookup);
-        
-        // Force manual IPv4 DNS resolution
-        const { address } = await lookupAsync('smtp.gmail.com', { family: 4 });
-
-        let transporter = nodemailer.createTransport({
-            host: address, // use resolved IPv4 address directly
-            port: 465,
-            secure: true,
-            auth: {
-                user: EMAIL_USER,
-                pass: EMAIL_PASS
-            },
-            tls: {
-                rejectUnauthorized: false,
-                servername: 'smtp.gmail.com' // required for TLS to match certificate when using IP
-            }
-        });
+        const transporter = await getTransporter();
+        const EMAIL_USER = process.env.EMAIL_USER;
 
         await transporter.sendMail({
             from: `"Jhumkeshwari" <${EMAIL_USER}>`,
