@@ -1,96 +1,71 @@
 const express = require('express');
-const nodemailer = require("nodemailer");
+const axios = require('axios');
 const User = require('../models/User');
 const router = express.Router();
 
-// Mock store for OTPs
+// In-memory OTP store (works for now; consider MongoDB for persistence across restarts)
 const otpStore = {};
 
-const dns = require('dns');
-const util = require('util');
-const lookupAsync = util.promisify(dns.lookup);
+// ─── Send OTP via Resend HTTP API (works on Render free tier) ─────────────────
+async function sendOTPEmail(toEmail, otp) {
+    const RESEND_API_KEY = process.env.RESEND_API_KEY;
+    const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev'; // use resend default until domain verified
 
-let transporterInstance = null;
-let isTransporterVerified = false;
-
-// Singleton function to get or create the Nodemailer transport pool
-async function getTransporter() {
-    if (transporterInstance && isTransporterVerified) return transporterInstance;
-
-    const EMAIL_USER = process.env.EMAIL_USER;
-    const EMAIL_PASS = process.env.EMAIL_PASS;
-
-    if (!EMAIL_USER || !EMAIL_PASS) {
-        throw new Error('Missing EMAIL_USER or EMAIL_PASS in environment variables.');
+    if (!RESEND_API_KEY) {
+        throw new Error('RESEND_API_KEY is not set in environment variables.');
     }
 
-    transporterInstance = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: EMAIL_USER,
-            pass: EMAIL_PASS
-        },
-        tls: {
-            rejectUnauthorized: false
-        },
-        pool: true,
-        maxConnections: 1,
-        maxMessages: 100
-    });
+    const html = `
+        <div style="font-family: sans-serif; text-align: center; padding: 30px; color: #232323; background: #fafafa;">
+            <h2 style="letter-spacing: 0.1em; color: #000; margin-bottom: 8px;">JHUMKESHWARI</h2>
+            <p style="font-size: 15px; color: #444;">Hello! Use the OTP below to complete your login securely.</p>
+            <div style="background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 24px; margin: 24px auto; width: 200px; font-size: 36px; font-weight: bold; letter-spacing: 0.3em; color: #111;">
+                ${otp}
+            </div>
+            <p style="color: #888; font-size: 12px;">This OTP will expire in 10 minutes. Do not share it with anyone.</p>
+        </div>
+    `;
 
-    try {
-        await transporterInstance.verify();
-        isTransporterVerified = true;
-        console.log('✅ Nodemailer Production Pool Ready (IPv4)');
-    } catch (error) {
-        console.error('❌ Nodemailer Verification Failed:', error.message);
-        // Important: if using Gmail 2FA, ensure EMAIL_PASS is an "App Password" not standard password
-        isTransporterVerified = false; 
-        throw error;
-    }
+    const response = await axios.post(
+        'https://api.resend.com/emails',
+        {
+            from: `Jhumkeshwari <${FROM_EMAIL}>`,
+            to: [toEmail],
+            subject: 'Your OTP – Jhumkeshwari 🔐',
+            html,
+        },
+        {
+            headers: {
+                Authorization: `Bearer ${RESEND_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            timeout: 10000, // 10 second timeout
+        }
+    );
 
-    return transporterInstance;
+    return response.data;
 }
 
-// 1. Send OTP Email Route
+// ─── 1. Send OTP Route ─────────────────────────────────────────────────────────
 router.post('/send-otp', async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: 'Email is required' });
 
-    // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    // WARNING: In-memory otpStore wipes whenever Render restarts. Use Redis/DB for true production later.
-    otpStore[email] = { otp, expires: Date.now() + 600000 }; 
+    otpStore[email] = { otp, expires: Date.now() + 600000 }; // 10 min expiry
 
     try {
-        const transporter = await getTransporter();
-        const EMAIL_USER = process.env.EMAIL_USER;
-
-        await transporter.sendMail({
-            from: `"Jhumkeshwari" <${EMAIL_USER}>`,
-            to: email,
-            subject: "Your OTP - Jhumkeshwari 🔐",
-            html: `
-                <div style="font-family: sans-serif; text-align: center; padding: 20px; color: #232323;">
-                    <h2 style="letter-spacing: 0.1em; color: #000;">JHUMKESHWARI</h2>
-                    <p style="font-size: 16px;">Hello! Use the OTP below to complete your login securely.</p>
-                    <div style="background: #f9f9f9; border: 1px solid #ddd; padding: 20px; margin: 20px auto; width: 200px; font-size: 32px; font-weight: bold; letter-spacing: 0.2em;">
-                        ${otp}
-                    </div>
-                    <p style="color: #666; font-size: 12px;">This OTP will expire in 10 minutes. Do not share it with anyone.</p>
-                </div>
-            `
-        });
-
-        console.log(`✅ Email OTP: ${otp} sent to ${email}`);
-        return res.json({ message: 'OTP sent to your email!' }); 
+        await sendOTPEmail(email, otp);
+        console.log(`✅ OTP sent to ${email} via Resend`);
+        return res.json({ message: 'OTP sent to your email!' });
     } catch (error) {
-        console.error('❌ EMAIL ERROR:', error.message);
-        return res.status(500).json({ message: `Failed to send OTP. Error: ${error.message}` });
+        const errMsg = error.response?.data?.message || error.message;
+        console.error('❌ EMAIL ERROR:', errMsg);
+        return res.status(500).json({ message: `Failed to send OTP: ${errMsg}` });
     }
 });
 
-// 2. Verify OTP Route
+// ─── 2. Verify OTP Route ───────────────────────────────────────────────────────
 router.post('/verify-otp', async (req, res) => {
     const { email, otp } = req.body;
     const record = otpStore[email];
@@ -110,17 +85,16 @@ router.post('/verify-otp', async (req, res) => {
                 await user.save();
             }
         } else {
-            console.log('⚠️ MongoDB NOT Connected: Falling back to Memory Session (Testing Mode)');
-            user = { email, name: '', phone: '' }; 
+            console.log('⚠️ MongoDB NOT Connected: Falling back to Memory Session');
+            user = { email, name: '', phone: '' };
         }
 
-        // Clean up OTP
         delete otpStore[email];
 
-        return res.json({ 
-            message: 'Logged in successfully!', 
-            user: { 
-                id: user._id, 
+        return res.json({
+            message: 'Logged in successfully!',
+            user: {
+                id: user._id,
                 email: user.email,
                 name: user.name || '',
                 phone: user.phone || ''
@@ -132,7 +106,7 @@ router.post('/verify-otp', async (req, res) => {
     }
 });
 
-// 3. Update Profile Route
+// ─── 3. Update Profile Route ───────────────────────────────────────────────────
 router.post('/update-profile', async (req, res) => {
     const { email, name, phone } = req.body;
     const isDBConnected = require('mongoose').connection.readyState === 1;
@@ -143,7 +117,10 @@ router.post('/update-profile', async (req, res) => {
                 { name, phone },
                 { new: true, upsert: true }
             );
-            return res.json({ message: 'Profile updated successfully!', user: { id: user._id, email: user.email, name: user.name, phone: user.phone } });
+            return res.json({
+                message: 'Profile updated successfully!',
+                user: { id: user._id, email: user.email, name: user.name, phone: user.phone }
+            });
         } else {
             return res.json({ message: 'Profile updated (Mocking)', user: { email, name, phone } });
         }
