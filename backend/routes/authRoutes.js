@@ -18,6 +18,11 @@ router.post('/send-otp', async (req, res) => {
     const EMAIL_USER = process.env.EMAIL_USER;
     const EMAIL_PASS = process.env.EMAIL_PASS;
 
+    if (!EMAIL_USER || !EMAIL_PASS) {
+        console.error('❌ EMAIL ERROR: Missing EMAIL_USER or EMAIL_PASS in environment variables.');
+        return res.status(500).json({ message: 'Email configuration missing in backend.' });
+    }
+
     try {
         let transporter = nodemailer.createTransport({
             service: "gmail",
@@ -46,8 +51,8 @@ router.post('/send-otp', async (req, res) => {
         console.log(`✅ Email OTP: ${otp} sent to ${email}`);
         return res.json({ message: 'OTP sent to your email!' }); 
     } catch (error) {
-        console.error('❌ EMAIL ERROR:', error);
-        return res.status(500).json({ message: 'Failed to send OTP Email. check backend logs.' });
+        console.error('❌ EMAIL ERROR:', error.message);
+        return res.status(500).json({ message: `Failed to send OTP. Error: ${error.message}` });
     }
 });
 

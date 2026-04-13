@@ -151,6 +151,12 @@ export const deleteAddress = async (userId, addressId) => {
 // Helper for image URLs
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return '';
+  
+  // Clean up hardcoded localhost URLs from old database records
+  if (imagePath.includes('http://localhost:5000')) {
+    imagePath = imagePath.replace('http://localhost:5000', '');
+  }
+
   if (imagePath.startsWith('http')) return imagePath;
   const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
   return `${BACKEND_URL}${path}`;

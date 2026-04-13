@@ -27,6 +27,7 @@ export default function AuthModal() {
             style: toastStyle
         });
       } catch (error) {
+        console.error("OTP send error:", error);
         toast.error(error.response?.data?.message || "Failed to send OTP", { style: toastStyle });
       } finally {
         setLoading(false);
@@ -50,6 +51,7 @@ export default function AuthModal() {
           toast.success("OTP Verified! Tell us about yourself.", { style: toastStyle });
         }
       } catch (error) {
+        console.error("OTP verification error:", error);
         toast.error(error.response?.data?.message || "Invalid OTP", { style: toastStyle });
       } finally {
         setLoading(false);
@@ -71,6 +73,7 @@ export default function AuthModal() {
             icon: '👋'
         });
       } catch (error) {
+        console.error("Profile complete error:", error);
         toast.error("Failed to save profile.", { style: toastStyle });
       } finally {
         setLoading(false);
