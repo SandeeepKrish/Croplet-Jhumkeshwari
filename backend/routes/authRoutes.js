@@ -8,8 +8,8 @@ const otpStore = {};
 
 // ─── Send OTP via Resend HTTP API (works on Render free tier) ─────────────────
 async function sendOTPEmail(toEmail, otp) {
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev'; // use resend default until domain verified
+    const RESEND_API_KEY = (process.env.RESEND_API_KEY || '').trim(); // .trim() prevents "Invalid character in header" from accidental whitespace
+    const FROM_EMAIL = (process.env.FROM_EMAIL || 'onboarding@resend.dev').trim();
 
     if (!RESEND_API_KEY) {
         throw new Error('RESEND_API_KEY is not set in environment variables.');
