@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('dns').setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent ENETUNREACH in Render
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
