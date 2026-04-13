@@ -24,24 +24,18 @@ async function getTransporter() {
         throw new Error('Missing EMAIL_USER or EMAIL_PASS in environment variables.');
     }
 
-    // Force manual IPv4 DNS resolution
-    const { address } = await lookupAsync('smtp.gmail.com', { family: 4 });
-
     transporterInstance = nodemailer.createTransport({
-        host: address, // use resolved IPv4 address directly
-        port: 465,
-        secure: true,
+        service: 'gmail',
         auth: {
             user: EMAIL_USER,
             pass: EMAIL_PASS
         },
         tls: {
-            rejectUnauthorized: false,
-            servername: 'smtp.gmail.com' // required for TLS to match certificate when using IP
+            rejectUnauthorized: false
         },
-        pool: true, // Use a connection pool (crucial for production reliability)
-        maxConnections: 3, // Prevent spamming Gmail with too many simultaneous connections
-        maxMessages: 100 // Reuse connection up to 100 times before recycling
+        pool: true,
+        maxConnections: 1,
+        maxMessages: 100
     });
 
     try {
