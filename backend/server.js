@@ -16,6 +16,7 @@ const userRoutes = require('./routes/userRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 
 const app = express();
+app.set('trust proxy', 1); // Required for rate-limit behind Render proxy
 
 const path = require('path');
 

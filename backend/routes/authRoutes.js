@@ -26,8 +26,8 @@ router.post('/send-otp', async (req, res) => {
     try {
         let transporter = nodemailer.createTransport({
             host: "smtp.gmail.com",
-            port: 587,
-            secure: false, // true for 465, false for other ports
+            port: 465, // Use 465 to avoid network timeouts on hosting platforms
+            secure: true, // true for 465
             requireTLS: true,
             auth: {
                 user: EMAIL_USER,
