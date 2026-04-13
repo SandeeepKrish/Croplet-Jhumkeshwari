@@ -24,17 +24,24 @@ router.post('/send-otp', async (req, res) => {
     }
 
     try {
+        const dns = require('dns');
+        const util = require('util');
+        const lookupAsync = util.promisify(dns.lookup);
+        
+        // Force manual IPv4 DNS resolution
+        const { address } = await lookupAsync('smtp.gmail.com', { family: 4 });
+
         let transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 465, // Use 465 to avoid network timeouts on hosting platforms
-            secure: true, // true for 465
-            requireTLS: true,
+            host: address, // use resolved IPv4 address directly
+            port: 465,
+            secure: true,
             auth: {
                 user: EMAIL_USER,
                 pass: EMAIL_PASS
             },
             tls: {
-                rejectUnauthorized: false
+                rejectUnauthorized: false,
+                servername: 'smtp.gmail.com' // required for TLS to match certificate when using IP
             }
         });
 
