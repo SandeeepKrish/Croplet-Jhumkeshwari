@@ -23,23 +23,35 @@ exports.adminLogin = async (req, res) => {
   }
 };
 
-// Setup initial admin 
+// Setup admin — reads credentials from .env (never hardcoded)
+// Call this ONCE via: POST /api/admin/setup with the SETUP_SECRET header
 exports.setupAdmin = async (req, res) => {
   try {
-    const username = 'AdminCroplet';
-    const password = 'Croplet@12345';
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Guard: require a secret header so random people can't reset admin
+    const setupSecret = req.headers['x-setup-secret'];
+    if (!setupSecret || setupSecret !== process.env.SETUP_SECRET) {
+      return res.status(403).json({ error: 'Forbidden: Invalid setup secret' });
+    }
 
+    const username = process.env.ADMIN_USERNAME;
+    const password = process.env.ADMIN_PASSWORD;
+
+    if (!username || !password) {
+      return res.status(500).json({ error: 'ADMIN_USERNAME or ADMIN_PASSWORD not set in .env' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     const admin = await Admin.findOne({ role: 'admin' });
+
     if (!admin) {
       const newAdmin = new Admin({ username, password: hashedPassword, role: 'admin' });
       await newAdmin.save();
-      return res.json({ message: `Admin account "${username}" created.` });
+      return res.json({ message: `Admin account created.` });
     } else {
       admin.username = username;
       admin.password = hashedPassword;
       await admin.save();
-      return res.json({ message: `Admin account updated to "${username}" with new password.` });
+      return res.json({ message: `Admin account updated successfully.` });
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to setup admin' });
